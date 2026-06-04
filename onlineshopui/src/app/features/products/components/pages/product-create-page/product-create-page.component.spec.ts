@@ -5,8 +5,10 @@ import { vi } from 'vitest';
 import { signal } from '@angular/core';
 import { ProductCreatePageComponent } from './product-create-page.component';
 import { ProductService } from '../../../services/product.service';
+import { SupplierService } from '../../../services/supplier.service';
 import { NotificationsService } from '../../../../../core/services/notifications.service';
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../../../../../core/mocks/data/products.mock';
+import { MOCK_SUPPLIERS } from '../../../../../core/mocks/data/suppliers.mock';
 import { AppNavRoutes } from '../../../../../core/config/constants/navigation.constants';
 import { ValidationMessages } from '../../../../../core/types/providers/validation-messages';
 import { DefaultValidationMessages } from '../../../../../core/config/constants/validation.constants';
@@ -20,6 +22,10 @@ describe('ProductCreatePageComponent', () => {
         loadCategories: ReturnType<typeof vi.fn>;
         create: ReturnType<typeof vi.fn>;
     };
+    let supplierServiceMock: {
+        suppliers: ReturnType<typeof signal>;
+        loadSuppliers: ReturnType<typeof vi.fn>;
+    };
     let routerMock: {
         navigate: ReturnType<typeof vi.fn>;
     };
@@ -30,13 +36,17 @@ describe('ProductCreatePageComponent', () => {
     let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        // Mock console.error to suppress expected error logs during error handling tests
         consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         productServiceMock = {
             categories: signal([...MOCK_CATEGORIES]),
             loading: signal(false),
             loadCategories: vi.fn().mockReturnValue(of(MOCK_CATEGORIES)),
             create: vi.fn().mockReturnValue(of(MOCK_PRODUCTS[0]))
+        };
+
+        supplierServiceMock = {
+            suppliers: signal([...MOCK_SUPPLIERS]),
+            loadSuppliers: vi.fn().mockReturnValue(of(MOCK_SUPPLIERS))
         };
 
         routerMock = {
@@ -52,6 +62,7 @@ describe('ProductCreatePageComponent', () => {
             imports: [ProductCreatePageComponent],
             providers: [
                 { provide: ProductService, useValue: productServiceMock },
+                { provide: SupplierService, useValue: supplierServiceMock },
                 { provide: Router, useValue: routerMock },
                 { provide: NotificationsService, useValue: notificationsServiceMock },
                 { provide: ValidationMessages, useValue: DefaultValidationMessages }
@@ -68,62 +79,48 @@ describe('ProductCreatePageComponent', () => {
 
     describe('Initialization', () => {
         it('should create', () => {
-            // Prepare
-            // (component created in beforeEach)
-
-            // Action
-            // (no action needed)
-
-            // Verify
             expect(component).toBeTruthy();
         });
 
         it('should load categories on init', () => {
-            // Prepare
-            // (component created in beforeEach)
-
-            // Action
             component.ngOnInit();
 
-            // Verify
             expect(productServiceMock.loadCategories).toHaveBeenCalled();
         });
 
-        it('should initialize with empty form', () => {
-            // Prepare
-            // (component created in beforeEach)
+        it('should load suppliers on init', () => {
+            component.ngOnInit();
 
-            // Action
+            expect(supplierServiceMock.loadSuppliers).toHaveBeenCalled();
+        });
+
+        it('should initialize with empty form', () => {
             fixture.detectChanges();
 
-            // Verify
             expect(component.form.value).toEqual({
                 name: '',
                 description: '',
                 price: 0,
                 weight: 0,
                 imageUrl: '',
-                categoryId: ''
+                categoryId: '',
+                supplierId: ''
             });
         });
     });
 
     describe('onSubmit()', () => {
         it('should not submit when form is invalid', () => {
-            // Prepare
             fixture.detectChanges();
             expect(component.form.invalid).toBe(true);
 
-            // Action
             component.onSubmit();
 
-            // Verify
             expect(productServiceMock.create).not.toHaveBeenCalled();
             expect(component.form.touched).toBe(true);
         });
 
         it('should create product and navigate on success', () => {
-            // Prepare
             fixture.detectChanges();
             component.form.patchValue({
                 name: 'Test Product',
@@ -131,13 +128,12 @@ describe('ProductCreatePageComponent', () => {
                 price: 99.99,
                 weight: 1.5,
                 imageUrl: 'http://test.com/image.jpg',
-                categoryId: 'cat-1'
+                categoryId: 'cat-1',
+                supplierId: 'sup-1'
             });
 
-            // Action
             component.onSubmit();
 
-            // Verify
             expect(productServiceMock.create).toHaveBeenCalled();
             expect(notificationsServiceMock.notifySuccess).toHaveBeenCalledWith({
                 title: 'Product created',
@@ -149,7 +145,6 @@ describe('ProductCreatePageComponent', () => {
         });
 
         it('should handle create failure', () => {
-            // Prepare
             fixture.detectChanges();
             component.form.patchValue({
                 name: 'Test Product',
@@ -157,14 +152,13 @@ describe('ProductCreatePageComponent', () => {
                 price: 99.99,
                 weight: 1.5,
                 imageUrl: 'http://test.com/image.jpg',
-                categoryId: 'cat-1'
+                categoryId: 'cat-1',
+                supplierId: 'sup-1'
             });
             productServiceMock.create.mockReturnValue(throwError(() => new Error('Failed')));
 
-            // Action
             component.onSubmit();
 
-            // Verify
             expect(notificationsServiceMock.notifyError).toHaveBeenCalledWith({
                 title: 'Create failed',
                 message: 'Unable to create the product.'
@@ -173,7 +167,6 @@ describe('ProductCreatePageComponent', () => {
         });
 
         it('should disable form while submitting', () => {
-            // Prepare
             fixture.detectChanges();
             component.form.patchValue({
                 name: 'Test Product',
@@ -181,28 +174,22 @@ describe('ProductCreatePageComponent', () => {
                 price: 99.99,
                 weight: 1.5,
                 imageUrl: 'http://test.com/image.jpg',
-                categoryId: 'cat-1'
+                categoryId: 'cat-1',
+                supplierId: 'sup-1'
             });
             expect(component.form.enabled).toBe(true);
 
-            // Action
             component.isSubmitting.set(true);
             fixture.detectChanges();
 
-            // Verify
             expect(component.form.disabled).toBe(true);
         });
     });
 
     describe('onCancel()', () => {
         it('should navigate to products overview', () => {
-            // Prepare
-            // (component created in beforeEach)
-
-            // Action
             component.onCancel();
 
-            // Verify
             expect(routerMock.navigate).toHaveBeenCalledWith([
                 `/${AppNavRoutes.Products.root}/${AppNavRoutes.Products.features.overview}`
             ]);
