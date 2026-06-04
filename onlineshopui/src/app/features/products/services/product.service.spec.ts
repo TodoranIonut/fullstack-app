@@ -305,7 +305,8 @@ describe('ProductService', () => {
                 price: newProductData.price,
                 weight: newProductData.weight,
                 imageUrl: newProductData.imageUrl,
-                category: MOCK_CATEGORIES[0]
+                category: MOCK_CATEGORIES[0],
+                supplier: null
             };
 
             // Pre-populate with existing products
