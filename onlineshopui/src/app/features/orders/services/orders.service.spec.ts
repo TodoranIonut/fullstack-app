@@ -7,6 +7,14 @@ import { EnvironmentConfig } from '../../../core/types/providers/environment-con
 import { MOCK_ENVIRONMENT_CONFIG } from '../../../core/mocks/data/environment.mock';
 import { MOCK_ORDERS } from '../../../core/mocks/data/orders.mock';
 import { OrderDto, CreateOrderDto } from '../../../core/types/dtos/order.dto';
+import { AddressDto } from '../../../core/types/dtos/location.dto';
+
+const MOCK_ADDRESS: AddressDto = {
+    country: 'Romania',
+    city: 'Cluj-Napoca',
+    county: 'Cluj',
+    streetAddress: 'Str. Eroilor 10'
+};
 
 describe('OrdersService', () => {
     let service: OrdersService;
@@ -227,6 +235,7 @@ describe('OrdersService', () => {
         it('should create a new order and add to orders signal', () => {
             // Prepare
             const createOrderData: CreateOrderDto = {
+                address: MOCK_ADDRESS,
                 items: [
                     {
                         productId: 'prod-3',
@@ -268,6 +277,7 @@ describe('OrdersService', () => {
         it('should send correct request body', () => {
             // Prepare
             const createOrderData: CreateOrderDto = {
+                address: MOCK_ADDRESS,
                 items: [
                     {
                         productId: 'prod-1',
@@ -293,6 +303,7 @@ describe('OrdersService', () => {
         it('should handle error when creating order fails', () => {
             // Prepare
             const createOrderData: CreateOrderDto = {
+                address: MOCK_ADDRESS,
                 items: [
                     {
                         productId: 'prod-1',

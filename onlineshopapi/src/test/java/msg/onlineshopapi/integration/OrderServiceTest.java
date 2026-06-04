@@ -1,6 +1,7 @@
 package msg.onlineshopapi.integration;
 
 import msg.onlineshopapi.exception.OrderNotProcessableException;
+import msg.onlineshopapi.model.Address;
 import msg.onlineshopapi.model.Location;
 import msg.onlineshopapi.model.Order;
 import msg.onlineshopapi.model.OrderDetail;
@@ -222,6 +223,68 @@ class OrderServiceTest {
         Stock updatedMouseStock = stockRepository.findById(mouseStockId).orElseThrow();
         assertThat(updatedLaptopStock.getQuantity()).isEqualTo(8);
         assertThat(updatedMouseStock.getQuantity()).isEqualTo(2);
+    }
+
+    @Test
+    void createOrder_persistsAddress_whenProvided() {
+        stockRepository.save(Stock.builder()
+                .id(stockId)
+                .product(laptop)
+                .location(location)
+                .quantity(5)
+                .build());
+
+        Address address = Address.builder()
+                .country("Romania")
+                .city("Cluj-Napoca")
+                .county("Cluj")
+                .streetAddress("Str. Eroilor 10")
+                .build();
+
+        OrderDetail detail = OrderDetail.builder()
+                .product(laptop)
+                .quantity(1)
+                .build();
+        Order order = Order.builder()
+                .address(address)
+                .orderDetails(new HashSet<>(Set.of(detail)))
+                .build();
+
+        Order result = orderService.createOrder(order, user.getEmail());
+
+        assertThat(result.getAddress()).isNotNull();
+        assertThat(result.getAddress().getCountry()).isEqualTo("Romania");
+        assertThat(result.getAddress().getCity()).isEqualTo("Cluj-Napoca");
+        assertThat(result.getAddress().getCounty()).isEqualTo("Cluj");
+        assertThat(result.getAddress().getStreetAddress()).isEqualTo("Str. Eroilor 10");
+
+        Order fromDb = orderRepository.findById(result.getId()).orElseThrow();
+        assertThat(fromDb.getAddress().getCountry()).isEqualTo("Romania");
+        assertThat(fromDb.getAddress().getStreetAddress()).isEqualTo("Str. Eroilor 10");
+    }
+
+    @Test
+    void createOrder_persistsNullAddress_whenNotProvided() {
+        stockRepository.save(Stock.builder()
+                .id(stockId)
+                .product(laptop)
+                .location(location)
+                .quantity(5)
+                .build());
+
+        OrderDetail detail = OrderDetail.builder()
+                .product(laptop)
+                .quantity(1)
+                .build();
+        Order order = Order.builder()
+                .address(null)
+                .orderDetails(new HashSet<>(Set.of(detail)))
+                .build();
+
+        Order result = orderService.createOrder(order, user.getEmail());
+
+        Order fromDb = orderRepository.findById(result.getId()).orElseThrow();
+        assertThat(fromDb.getAddress()).isNull();
     }
 
     @Test

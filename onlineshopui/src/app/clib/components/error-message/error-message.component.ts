@@ -1,5 +1,7 @@
 import { Component, input, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl } from '@angular/forms';
+import { EMPTY, merge, switchMap } from 'rxjs';
 import {
     ValidationMessages,
     ValidationMessagesMap
@@ -22,7 +24,16 @@ export class ErrorMessageComponent {
 
     private readonly validationMessages = inject<ValidationMessagesMap>(ValidationMessages);
 
+    // Creates a reactive dependency on status/value changes so computed() re-evaluates
+    // when markAllAsTouched() or user input mutates the control state.
+    private readonly _controlState = toSignal(
+        toObservable(this.control).pipe(
+            switchMap(ctrl => (ctrl ? merge(ctrl.statusChanges, ctrl.valueChanges) : EMPTY))
+        )
+    );
+
     errorMessage = computed(() => {
+        this._controlState(); // reactive dependency on control state changes
         const ctrl = this.control();
         if (!ctrl?.errors || !ctrl.touched) {
             return null;

@@ -11,5 +11,6 @@ import java.util.List;
 @Builder
 public class OrderRequestDto {
 
+    private AddressDto address;
     private List<OrderItemRequestDto> items;
 }

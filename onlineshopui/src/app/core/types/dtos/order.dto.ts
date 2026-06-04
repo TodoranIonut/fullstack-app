@@ -22,5 +22,6 @@ export type CreateOrderItemDto = {
 };
 
 export type CreateOrderDto = {
+    address: AddressDto;
     items: CreateOrderItemDto[];
 };

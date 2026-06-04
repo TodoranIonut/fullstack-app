@@ -37,18 +37,24 @@
 
         @if (!loading() && !error() && cartItems().length > 0) {
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-4">
-                    @for (item of cartItems(); track item.productId) {
-                        @if (productsById().get(item.productId)) {
-                            <app-cart-item-row
-                                [cartItem]="item"
-                                [product]="productsById().get(item.productId)!"
-                                [isUpdating]="isSubmitting()"
-                                (quantityChange)="onQuantityChange(item.productId, $event)"
-                                (remove)="onRemoveItem(item.productId)"
-                            />
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="space-y-4">
+                        @for (item of cartItems(); track item.productId) {
+                            @if (productsById().get(item.productId)) {
+                                <app-cart-item-row
+                                    [cartItem]="item"
+                                    [product]="productsById().get(item.productId)!"
+                                    [isUpdating]="isSubmitting()"
+                                    (quantityChange)="onQuantityChange(item.productId, $event)"
+                                    (remove)="onRemoveItem(item.productId)"
+                                />
+                            }
                         }
-                    }
+                    </div>
+
+                    <div class="bg-surface rounded-xl border border-border p-4 md:p-6">
+                        <app-cart-address-form [form]="addressForm" />
+                    </div>
                 </div>
 
                 <div>
