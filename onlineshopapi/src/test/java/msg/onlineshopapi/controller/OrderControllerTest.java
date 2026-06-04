@@ -2,11 +2,13 @@ package msg.onlineshopapi.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import msg.onlineshopapi.config.TestSecurityConfig;
+import msg.onlineshopapi.dto.AddressDto;
 import msg.onlineshopapi.dto.OrderItemRequestDto;
 import msg.onlineshopapi.dto.OrderRequestDto;
 import msg.onlineshopapi.dto.OrderResponseDto;
 import msg.onlineshopapi.dto.mapper.OrderMapper;
 import msg.onlineshopapi.exception.OrderNotProcessableException;
+import msg.onlineshopapi.model.Address;
 import msg.onlineshopapi.model.Order;
 import msg.onlineshopapi.security.JwtService;
 import msg.onlineshopapi.service.OrderService;
@@ -139,11 +141,62 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.error").value("Insufficient stock"));
     }
 
+    @Test
+    @WithMockUser(username = "customer@test.com", roles = "CUSTOMER")
+    void create_includesAddress_inRequestToService() throws Exception {
+        OrderRequestDto request = OrderRequestDto.builder()
+                .address(AddressDto.builder()
+                        .country("Romania")
+                        .city("Cluj-Napoca")
+                        .county("Cluj")
+                        .streetAddress("Str. Eroilor 10")
+                        .build())
+                .items(List.of(OrderItemRequestDto.builder()
+                        .productId(productId).quantity(1).build()))
+                .build();
+
+        Order entity = Order.builder()
+                .address(Address.builder()
+                        .country("Romania").city("Cluj-Napoca").county("Cluj").streetAddress("Str. Eroilor 10")
+                        .build())
+                .build();
+        Order saved = Order.builder().id(orderId).build();
+        OrderResponseDto dto = orderResponseWithAddress(orderId);
+
+        when(orderMapper.toEntity(any(OrderRequestDto.class))).thenReturn(entity);
+        when(orderService.createOrder(eq(entity), eq("customer@test.com"))).thenReturn(saved);
+        when(orderMapper.toDto(saved)).thenReturn(dto);
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request))
+                        .principal(() -> "customer@test.com"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.address.country").value("Romania"))
+                .andExpect(jsonPath("$.address.city").value("Cluj-Napoca"))
+                .andExpect(jsonPath("$.address.streetAddress").value("Str. Eroilor 10"));
+    }
+
     private OrderResponseDto orderResponse(UUID id) {
         return OrderResponseDto.builder()
                 .id(id)
                 .userId(userId)
                 .createdAt(LocalDateTime.of(2026, 3, 23, 12, 0))
+                .details(List.of())
+                .build();
+    }
+
+    private OrderResponseDto orderResponseWithAddress(UUID id) {
+        return OrderResponseDto.builder()
+                .id(id)
+                .userId(userId)
+                .createdAt(LocalDateTime.of(2026, 3, 23, 12, 0))
+                .address(AddressDto.builder()
+                        .country("Romania")
+                        .city("Cluj-Napoca")
+                        .county("Cluj")
+                        .streetAddress("Str. Eroilor 10")
+                        .build())
                 .details(List.of())
                 .build();
     }

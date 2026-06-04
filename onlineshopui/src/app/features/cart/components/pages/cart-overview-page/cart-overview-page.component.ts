@@ -14,6 +14,7 @@ import { OrdersService } from '../../../../orders/services/orders.service';
 import { SpinnerComponent } from '../../../../../clib/components/spinner/spinner.component';
 import { CartItemRowComponent } from '../../views/cart-item-row/cart-item-row.component';
 import { CartSummaryComponent } from '../../views/cart-summary/cart-summary.component';
+import { CartAddressFormComponent } from '../../views/cart-address-form/cart-address-form.component';
 import { AppNavRoutes } from '../../../../../core/config/constants/navigation.constants';
 import { NotificationsService } from '../../../../../core/services/notifications.service';
 import {
@@ -21,10 +22,11 @@ import {
     calculateCartSubtotal,
     toCreateOrderDto
 } from '../../../utils/cart.utils';
+import { createAddressForm } from '../../../utils/address-form.utils';
 
 @Component({
     selector: 'app-cart-overview-page',
-    imports: [SpinnerComponent, CartItemRowComponent, CartSummaryComponent, RouterLink],
+    imports: [SpinnerComponent, CartItemRowComponent, CartSummaryComponent, CartAddressFormComponent, RouterLink],
     templateUrl: './cart-overview-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -40,6 +42,7 @@ export class CartOverviewPageComponent implements OnInit {
     readonly loading = this.productService.loading;
     readonly error = this.productService.error;
     readonly isSubmitting = signal(false);
+    readonly addressForm = createAddressForm();
     readonly productsLink = [
         '/',
         AppNavRoutes.Products.root,
@@ -73,8 +76,12 @@ export class CartOverviewPageComponent implements OnInit {
     onCheckout(): void {
         if (this.cartItems().length === 0) return;
 
-        const payload = toCreateOrderDto(this.cartItems());
-        if (!payload) return;
+        if (this.addressForm.invalid) {
+            this.addressForm.markAllAsTouched();
+            return;
+        }
+
+        const payload = toCreateOrderDto(this.cartItems(), this.addressForm.getRawValue());
 
         this.isSubmitting.set(true);
         this.ordersService
